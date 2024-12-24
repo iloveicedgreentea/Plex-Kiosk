@@ -93,34 +93,34 @@
 <body>
     <div class="container">
         <h1>Plex Library</h1>
-        <div class="last-updated">Last updated: {{ last_updated }}</div>
+        <div class="last-updated">Last updated: {{.lastUpdated}}</div>
 
-        {% for library_name, items in libraries.items() %}
+        {{range $libraryName, $items := .libraries}}
         <div class="library-section">
-            <h2>{{ library_name }}</h2>
-            {% if items %}
+            <h2>{{$libraryName}}</h2>
+            {{if $items}}
             <div class="items-grid">
-                {% for item in items %}
+                {{range $items}}
                 <div class="item-card">
-                    {% if item.thumb_url %}
-                    <img class="item-thumb" src="{{ item.thumb_url }}" alt="{{ item.title }}">
-                    {% else %}
+                    {{if .ThumbURL}}
+                    <img class="item-thumb" src="{{.ThumbURL}}" alt="{{.Title}}">
+                    {{else}}
                     <div class="item-thumb"></div>
-                    {% endif %}
+                    {{end}}
                     <div class="item-info">
-                        <h3 class="item-title">{{ item.title }}</h3>
-                        {% if item.year %}
-                        <div class="item-year">{{ item.year }}</div>
-                        {% endif %}
+                        <h3 class="item-title">{{.Title}}</h3>
+                        {{if .Year}}
+                        <div class="item-year">{{.Year}}</div>
+                        {{end}}
                     </div>
                 </div>
-                {% endfor %}
+                {{end}}
             </div>
-            {% else %}
+            {{else}}
             <div class="no-items">No items found in this library</div>
-            {% endif %}
+            {{end}}
         </div>
-        {% endfor %}
+        {{end}}
     </div>
 </body>
 </html>

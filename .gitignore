@@ -1,4 +1,5 @@
-venv
+bin
+out
 **/*.pdf
 cache
 .DS_Store

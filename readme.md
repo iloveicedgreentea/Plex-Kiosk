@@ -12,7 +12,7 @@ For now, you will have to set Plex to allow local access without authentication 
 I might implement Plex OAuth in the future.
 
 ### Local
-`export PLEXURL="scheme://yourplexserver:port"`
+`export PLEX_URL="scheme://yourplexserver:port"`
 
 refer to docker compose for other env vars
 
@@ -23,7 +23,7 @@ Create a new container with the following settings:
 
 - Repository: `ghcr.io/tbd`
 - Environment Variables:
-  - `PLEXURL`: `scheme://yourplexserver:port`
+  - `PLEX_URL`: `scheme://yourplexserver:port`
   - `ALLOWED_LIBRARIES`: `Movies,TV Shows` 
   - `REFRESH_INTERVAL`: `21600` # 6 hours
   - `TZ`: `UTC` # if you want

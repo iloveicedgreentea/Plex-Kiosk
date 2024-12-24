@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 echo "Starting Plex Library Viewer..."
-echo "PLEXURL is set to: $PLEXURL"
+echo "PLEX_URL is set to: $PLEX_URL"
 
 # Create required nginx directories
 mkdir -p /var/log/nginx
@@ -10,7 +10,7 @@ chown -R nginx:nginx /var/log/nginx
 
 # Replace environment variables in nginx config
 echo "Configuring nginx..."
-envsubst '$PLEXURL' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+envsubst '$PLEX_URL' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 
 # Test nginx config
 echo "Testing nginx configuration..."
@@ -31,13 +31,6 @@ if ! kill -0 $NGINX_PID 2>/dev/null; then
     exit 1
 fi
 
-echo "Starting FastAPI application with Gunicorn..."
-# Start the FastAPI application with Gunicorn
-exec gunicorn app:app \
-    --workers 4 \
-    --worker-class uvicorn.workers.UvicornWorker \
-    --bind 127.0.0.1:8000 \
-    --user appuser \
-    --access-logfile - \
-    --error-logfile - \
-    --log-level info
+echo "Starting Go application..."
+# Start the Go application
+exec ./plex-viewer
