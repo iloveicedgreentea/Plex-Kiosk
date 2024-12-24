@@ -1,8 +1,14 @@
 # Plex Kiosk
 
-This is WIP. I dont know what I want to do with this yet. I made this in an hour. I might add movie poster functionality (sync with now playing and/or display a watchlist, maybe support user requests so your friends can vote on something to watch async and it will show up)
+![alt text](image.png)
 
-Grabs your libraries and displays items in a new kiosk view. Useful as a scrollable view or sharing your library with friends.
+> [!NOTE]  
+> These are just thumbnails and do not demonstrate nor imply ownership or possession of any content
+
+Grab your libraries and display items in a kiosk view. Useful as a scrollable view or sharing your library with friends.
+
+This is WIP. I dont know what I want to do with this yet. I made this in about an hour. I might add movie poster functionality (sync with now playing and/or display a watchlist, maybe support user requests so your friends can vote on something to watch async and it will show up)
+
 
 ## Usage
 
@@ -11,6 +17,7 @@ For now, you will have to set Plex to allow local access without authentication 
 I might implement Plex OAuth in the future.
 
 ### Unraid/Orchestrator
+
 Create a new container with the following settings:
 
 - Repository: `ghcr.io/iloveicedgreentea/plex-kiosk:latest`

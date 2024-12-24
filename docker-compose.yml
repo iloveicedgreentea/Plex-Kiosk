@@ -9,7 +9,7 @@ services:
       - "80:80"
     environment:
       - PLEX_URL=${PLEX_URL}
-      - ALLOWED_LIBRARIES=Movies
+      - ALLOWED_LIBRARIES=Movies,TV Shows
       - REFRESH_INTERVAL=21600
       - TZ=UTC
     volumes:
