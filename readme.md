@@ -9,6 +9,10 @@ Grab your libraries and display items in a kiosk view. Useful as a scrollable vi
 
 This is WIP. I dont know what I want to do with this yet. I made this in about an hour. I might add movie poster functionality (sync with now playing and/or display a watchlist, maybe support user requests so your friends can vote on something to watch async and it will show up)
 
+TODO: new additions at the top
+TODO: requests/vote (needs an event system like host creates an event, people rsvp, people vote tied to that one event)
+TODO: rsvp function
+
 
 ## Usage
 

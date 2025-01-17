@@ -74,7 +74,7 @@ func (ps *PlexServer) fetchLibraryContent(key string) ([]LibraryItem, error) {
 			items = append(items, LibraryItem{
 				Title:    video.Title,
 				Year:     video.Year,
-				ThumbURL: fmt.Sprintf("%s%s", ps.URL, thumb),
+				ThumbURL: thumb, // using nginx to serve the content
 				AddedAt:  time.Unix(video.AddedAt, 0),
 				Rating:   video.Rating,
 			})
@@ -89,7 +89,7 @@ func (ps *PlexServer) fetchLibraryContent(key string) ([]LibraryItem, error) {
 			items = append(items, LibraryItem{
 				Title:    video.Title,
 				Year:     video.Year,
-				ThumbURL: fmt.Sprintf("%s%s", ps.URL, thumb),
+				ThumbURL: thumb,
 				AddedAt:  time.Unix(video.AddedAt, 0),
 				Rating:   video.Rating,
 			})
