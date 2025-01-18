@@ -29,7 +29,7 @@ const DebugImage = ({ src, alt }: { src: string; alt: string }) => {
     const [error, setError] = useState(false);
 
     return (
-        <div className="aspect-[2/3] relative">
+        <div className="w-full aspect-[2/3] relative">
             <img
                 src={src}
                 alt={alt}
@@ -52,28 +52,28 @@ const DebugImage = ({ src, alt }: { src: string; alt: string }) => {
 export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
     if (!item) return null;
 
-    console.log('Rendering modal with item:', item); // Debug log
-
     return (
         <Dialog open={isOpen} onOpenChange={() => onClose()}>
-            <DialogContent className="bg-[#2d2d2d] text-white p-6 max-w-4xl w-full">
-                <div className="flex justify-between items-start">
-                    <h2 className="text-2xl font-bold text-[#e5a00d]">{item.title}</h2>
+            <DialogContent className="bg-[#2d2d2d] text-white w-[calc(100%-2rem)] max-w-3xl mx-auto p-4 overflow-y-auto max-h-[90vh] rounded-lg">
+                <div className="flex justify-between items-start mb-4">
+                    <h2 className="text-xl md:text-2xl font-bold text-[#e5a00d] pr-8">{item.title}</h2>
                     <button
                         onClick={() => onClose()}
-                        className="text-gray-400 hover:text-white"
+                        className="text-gray-400 hover:text-white shrink-0"
                     >
                         <X size={24} />
                     </button>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <DebugImage src={item.thumb_url || ''} alt={item.title} />
+                <div className="flex flex-col md:grid md:grid-cols-2 gap-6">
+                    <div className="w-full max-w-sm mx-auto md:max-w-none">
+                        <DebugImage src={item.thumb_url || ''} alt={item.title} />
+                    </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         <div>
                             <h3 className="text-[#e5a00d] font-semibold mb-2">Details</h3>
-                            <div className="space-y-1">
+                            <div className="space-y-1 text-sm md:text-base">
                                 <p className="text-gray-300">Year: {item.year || 'N/A'}</p>
                                 <p className="text-gray-300">
                                     Rating: {item.rating ? `${(item.rating * 10).toFixed(1)}%` : 'N/A'}
@@ -103,7 +103,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
                         {item.description && (
                             <div>
                                 <h3 className="text-[#e5a00d] font-semibold mb-2">Description</h3>
-                                <p className="text-gray-300 leading-relaxed">{item.description}</p>
+                                <p className="text-gray-300 text-sm md:text-base leading-relaxed">{item.description}</p>
                             </div>
                         )}
 
@@ -114,7 +114,7 @@ export function ItemModal({ item, isOpen, onClose }: ItemModalProps) {
                                     href={item.trailer_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-blue-400 hover:text-blue-300"
+                                    className="text-blue-400 hover:text-blue-300 text-sm md:text-base"
                                 >
                                     Watch Trailer
                                 </a>
