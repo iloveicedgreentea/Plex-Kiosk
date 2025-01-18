@@ -114,11 +114,38 @@ func (app *App) refreshCache() {
 func (app *App) setupRoutes(router *gin.Engine) {
 	router.GET("/health", app.healthCheck)
 	router.GET("/", app.home)
+	router.GET("/thumbnail/*path", app.serveThumb)
 }
 
 // healthCheck handles the health check endpoint
 func (app *App) healthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+}
+
+// serveThumb serves a thumbnail image from Plex to prevent mixed content errors
+func (app *App) serveThumb(c *gin.Context) {
+	path := c.Param("path")
+	// merge plex url with path returned from plex
+	fullURL := fmt.Sprintf("%s%s", app.plexServer.URL, path)
+
+	c.Header("Cache-Control", "public, max-age=604800") // 7 days
+	c.Header("Expires", time.Now().Add(7*24*time.Hour).UTC().Format(http.TimeFormat))
+
+	// Make the request to Plex
+	resp, err := app.plexServer.Client.Get(fullURL)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Failed to fetch thumbnail")
+		return
+	}
+	defer resp.Body.Close()
+
+	// Copy headers from Plex response
+	for k, v := range resp.Header {
+		c.Header(k, v[0])
+	}
+
+	// Stream the response
+	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
 }
 
 // home handles the main page
@@ -189,7 +216,6 @@ func (app *App) fetchLibraryData() (map[string][]LibraryItem, error) {
 
 	return result, nil
 }
-
 
 func main() {
 	app := NewApp(nil)
