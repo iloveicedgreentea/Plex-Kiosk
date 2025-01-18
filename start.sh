@@ -33,4 +33,4 @@ fi
 
 echo "Starting Go application..."
 # Start the Go application
-exec ./plex-viewer
+./plex-viewer

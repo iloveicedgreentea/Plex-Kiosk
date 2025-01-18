@@ -1,23 +1,22 @@
-FROM golang:1.23-alpine as builder
+# Frontend build stage
+FROM oven/bun:1 as frontend-builder
+WORKDIR /frontend
+COPY frontend/package.json frontend/bun.lockb ./
+RUN bun install
+COPY frontend/ .
+RUN bun run build
 
+# Backend build stage
+FROM golang:alpine as backend-builder
 WORKDIR /app
-
-# Install build dependencies
 RUN apk add --no-cache gcc musl-dev
-
-# Copy go mod files
 COPY go.mod go.sum ./
 RUN go mod download
-
-# Copy source code
 COPY ./cmd .
-
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o plex-viewer .
+RUN GOOS=linux go build -o plex-viewer .
 
 # Final stage
 FROM alpine:latest
-
 WORKDIR /app
 
 # Install nginx and dependencies
@@ -34,13 +33,13 @@ RUN addgroup -S appgroup && \
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.template
 
-# Copy compiled application
-COPY --from=builder /app/plex-viewer .
+# Copy the frontend build
+COPY --from=frontend-builder /frontend/dist /usr/share/nginx/html
+
+# Copy compiled backend
+COPY --from=backend-builder /app/plex-viewer .
 RUN chown appuser:appgroup plex-viewer && chmod +x plex-viewer
 
-# Copy templates
-COPY templates/ templates/
-RUN chown -R appuser:appgroup templates
 
 # Copy startup script
 COPY start.sh /start.sh
@@ -48,5 +47,6 @@ RUN chmod +x /start.sh
 
 EXPOSE 80
 ENV GIN_MODE=release
+ENV ALLOWED_LIBRARIES="Movies,TV Shows"
 
 ENTRYPOINT ["/start.sh"]

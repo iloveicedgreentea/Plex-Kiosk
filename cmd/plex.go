@@ -11,30 +11,66 @@ import (
 
 // fetchLibraries gets all library sections
 func (ps *PlexServer) fetchLibraries() ([]struct{ Title, Key string }, error) {
-	resp, err := ps.Client.Get(fmt.Sprintf("%s/library/sections", ps.URL))
+	libraryURL := fmt.Sprintf("%s/library/sections", ps.URL)
+	log.Printf("Requesting libraries from: %s", libraryURL)
+
+	resp, err := ps.Client.Get(libraryURL)
 	if err != nil {
+		log.Printf("Error fetching libraries: %v", err)
 		return nil, fmt.Errorf("failed to fetch libraries: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var plexResp MediaContainer
+	decoder := xml.NewDecoder(resp.Body)
+	if err := decoder.Decode(&plexResp); err != nil {
+		log.Printf("Error decoding XML: %v", err)
+		return nil, fmt.Errorf("failed to decode libraries response: %w", err)
+	}
+
+	log.Printf("Plex resp %v", plexResp)
+
+	var libraries []struct{ Title, Key string }
+	for _, dir := range plexResp.Directory {
+		log.Printf("Found library: %s with key: %s", dir.Title, dir.Key)
+		libraries = append(libraries, struct{ Title, Key string }{
+			Title: dir.Title,
+			Key:   dir.Key,
+		})
+	}
+	// TODO: use debug logs
+	log.Printf("Total libraries found: %d", len(libraries))
+	return libraries, nil
+}
+
+func (ps *PlexServer) fetchMetadata(key string) (*MediaContainer, error) {
+	resp, err := ps.Client.Get(fmt.Sprintf("%s/library/metadata/%s", ps.URL, key))
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch metadata: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
+		return nil, fmt.Errorf("failed to read metadata body: %w", err)
 	}
+
 	var plexResp MediaContainer
 	if err := xml.Unmarshal(body, &plexResp); err != nil {
-		return nil, fmt.Errorf("failed to decode libraries response: %w", err)
+		return nil, fmt.Errorf("failed to decode metadata: %w", err)
 	}
 
-	var libraries []struct{ Title, Key string }
+	return &plexResp, nil
+}
 
-	for _, dir := range plexResp.Directories {
-		libraries = append(libraries, struct{ Title, Key string }{
-			Title: dir.Title,
-			Key:   strings.TrimSpace(dir.Key),
-		})
+// getTrailerURL attempts to find a trailer URL from extras
+func (ps *PlexServer) getTrailerURL(extras ExtraData) string {
+	for _, extra := range extras.Extra {
+		if strings.EqualFold(extra.Type, "trailer") {
+			return fmt.Sprintf("/thumbnail%s", extra.VideoKey)
+		}
 	}
-	return libraries, nil
+	return ""
 }
 
 // fetchLibraryContent gets all items in a library section
@@ -46,54 +82,59 @@ func (ps *PlexServer) fetchLibraryContent(key string) ([]LibraryItem, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
 	var plexResp MediaContainer
-	if err := xml.Unmarshal(body, &plexResp); err != nil {
+	if err := xml.NewDecoder(resp.Body).Decode(&plexResp); err != nil {
 		return nil, fmt.Errorf("failed to decode library content: %w", err)
 	}
 
 	var items []LibraryItem
 
-	// plex stupidly uses two different structs and fields for tv/movie
-	// so we have to check which one we're dealing with
-	isVideo := len(plexResp.Videos) > 0
-	isDirectory := len(plexResp.Directories) > 0
-
-	// TODO: use generic functions to DRY
-	if isVideo {
-		for _, video := range plexResp.Videos {
-			thumb := ""
-			if video.Thumb != "" {
-				thumb = video.Thumb
-			}
-
-			items = append(items, LibraryItem{
-				Title:    video.Title,
-				Year:     video.Year,
-				ThumbURL: fmt.Sprintf("/thumbnail%s", thumb), // using nginx to serve the content
-				AddedAt:  time.Unix(video.AddedAt, 0),
-				Rating:   video.Rating,
-			})
+	// Handle video content (movies)
+	for _, video := range plexResp.Videos {
+		thumb := ""
+		if video.Thumb != "" {
+			thumb = video.Thumb
 		}
-	} else if isDirectory {
-		for _, video := range plexResp.Directories {
-			thumb := ""
-			if video.Thumb != "" {
-				thumb = video.Thumb
-			}
 
-			items = append(items, LibraryItem{
-				Title:    video.Title,
-				Year:     video.Year,
-				ThumbURL: fmt.Sprintf("/thumbnail%s", thumb),
-				AddedAt:  time.Unix(video.AddedAt, 0),
-				Rating:   video.Rating,
-			})
+		var cast []string
+		for _, role := range video.Role {
+			cast = append(cast, role.Tag)
 		}
+
+		items = append(items, LibraryItem{
+			Title:       video.Title,
+			Year:        video.Year,
+			ThumbURL:    fmt.Sprintf("/thumbnail%s", thumb),
+			AddedAt:     time.Unix(video.AddedAt, 0),
+			Rating:      video.Rating,
+			Description: video.Summary,
+			Cast:        cast,
+			TrailerURL:  ps.getTrailerURL(video.ExtraData),
+		})
+	}
+
+	// Handle directory content (TV shows)
+	for _, dir := range plexResp.Directory {
+		thumb := ""
+		if dir.Thumb != "" {
+			thumb = dir.Thumb
+		}
+
+		var cast []string
+		for _, role := range dir.Role {
+			cast = append(cast, role.Tag)
+		}
+
+		items = append(items, LibraryItem{
+			Title:       dir.Title,
+			Year:        dir.Year,
+			ThumbURL:    fmt.Sprintf("/thumbnail%s", thumb),
+			AddedAt:     time.Unix(dir.AddedAt, 0),
+			Rating:      dir.Rating,
+			Description: dir.Summary,
+			Cast:        cast,
+			TrailerURL:  ps.getTrailerURL(dir.ExtraData),
+		})
 	}
 
 	return items, nil
