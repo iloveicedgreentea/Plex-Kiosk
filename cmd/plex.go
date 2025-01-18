@@ -38,7 +38,7 @@ func (ps *PlexServer) fetchLibraries() ([]struct{ Title, Key string }, error) {
 			Key:   dir.Key,
 		})
 	}
-
+	// TODO: use debug logs
 	log.Printf("Total libraries found: %d", len(libraries))
 	return libraries, nil
 }
