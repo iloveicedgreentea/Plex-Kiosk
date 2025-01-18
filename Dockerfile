@@ -47,5 +47,6 @@ RUN chmod +x /start.sh
 
 EXPOSE 80
 ENV GIN_MODE=release
+ENV ALLOWED_LIBRARIES="Movies,TV Shows"
 
 ENTRYPOINT ["/start.sh"]
