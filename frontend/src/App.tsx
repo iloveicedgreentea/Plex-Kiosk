@@ -11,7 +11,7 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api');
+        const response = await fetch('/api/');
         if (!response.ok) {
           throw new Error('Failed to fetch library data');
         }
