@@ -128,6 +128,9 @@ func (app *App) serveThumb(c *gin.Context) {
 	// merge plex url with path returned from plex
 	fullURL := fmt.Sprintf("%s%s", app.plexServer.URL, path)
 
+	c.Header("Cache-Control", "public, max-age=604800") // 7 days
+	c.Header("Expires", time.Now().Add(7*24*time.Hour).UTC().Format(http.TimeFormat))
+
 	// Make the request to Plex
 	resp, err := app.plexServer.Client.Get(fullURL)
 	if err != nil {

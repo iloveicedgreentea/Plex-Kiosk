@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preload" as="image" href="{{.ThumbURL}}">
     <title>Plex Library Viewer</title>
     <style>
         :root {
@@ -26,7 +28,8 @@
             margin: 0 auto;
         }
 
-        h1, h2 {
+        h1,
+        h2 {
             color: var(--accent);
         }
 
@@ -90,6 +93,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Plex Library</h1>
@@ -123,4 +127,5 @@
         {{end}}
     </div>
 </body>
+
 </html>
