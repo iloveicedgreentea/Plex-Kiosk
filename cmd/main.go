@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -17,7 +16,7 @@ import (
 )
 
 // NewApp creates a new application instance
-func NewApp(t *template.Template) *App {
+func NewApp() *App {
 	// Load configuration from environment
 	config := Config{
 		PlexURL:          getEnv("PLEX_URL", "http://localhost:32400"),
@@ -26,16 +25,12 @@ func NewApp(t *template.Template) *App {
 		CacheDir:         "/app/cache",
 	}
 
-	if t == nil {
-		t = template.Must(template.ParseGlob("templates/*"))
-	}
 	return &App{
 		config: config,
 		plexServer: &PlexServer{URL: config.PlexURL, Client: &http.Client{
 			Timeout: 10 * time.Second,
 		}},
 		cache:     cache.New(config.RefreshInterval, config.RefreshInterval*2),
-		templates: t,
 	}
 }
 
@@ -123,21 +118,30 @@ func (app *App) healthCheck(c *gin.Context) {
 }
 
 // serveThumb serves a thumbnail image from Plex to prevent mixed content errors
+// serveThumb handles serving thumbnail images from Plex
 func (app *App) serveThumb(c *gin.Context) {
 	path := c.Param("path")
-	// merge plex url with path returned from plex
+	log.Printf("Thumbnail request received - Path: %s", path)
+
 	fullURL := fmt.Sprintf("%s%s", app.plexServer.URL, path)
+	log.Printf("Fetching thumbnail from Plex URL: %s", fullURL)
 
-	c.Header("Cache-Control", "public, max-age=604800") // 7 days
-	c.Header("Expires", time.Now().Add(7*24*time.Hour).UTC().Format(http.TimeFormat))
-
-	// Make the request to Plex
 	resp, err := app.plexServer.Client.Get(fullURL)
 	if err != nil {
+		log.Printf("Error fetching thumbnail: %v", err)
 		c.String(http.StatusInternalServerError, "Failed to fetch thumbnail")
 		return
 	}
 	defer resp.Body.Close()
+
+	log.Printf("Thumbnail response received - Status: %s, Content-Type: %s, Length: %d",
+		resp.Status,
+		resp.Header.Get("Content-Type"),
+		resp.ContentLength)
+
+	// Set cache headers
+	c.Header("Cache-Control", "public, max-age=604800") // 7 days
+	c.Header("Expires", time.Now().Add(7*24*time.Hour).UTC().Format(http.TimeFormat))
 
 	// Copy headers from Plex response
 	for k, v := range resp.Header {
@@ -146,6 +150,7 @@ func (app *App) serveThumb(c *gin.Context) {
 
 	// Stream the response
 	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
+	log.Printf("Thumbnail served successfully for: %s", path)
 }
 
 // home handles the main page
@@ -158,8 +163,8 @@ func (app *App) home(c *gin.Context) {
 		var err error
 		data, err = app.fetchLibraryData()
 		if err != nil {
-			c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-				"Error": err.Error(),
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
 			})
 			return
 		}
@@ -168,7 +173,7 @@ func (app *App) home(c *gin.Context) {
 		app.mu.Unlock()
 	}
 
-	c.HTML(http.StatusOK, "index.html", gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"libraries":   data,
 		"lastUpdated": time.Now().Format("2006-01-02 15:04:05"),
 	})
@@ -218,7 +223,7 @@ func (app *App) fetchLibraryData() (map[string][]LibraryItem, error) {
 }
 
 func main() {
-	app := NewApp(nil)
+	app := NewApp()
 
 	// Start the cache refresh goroutine
 	go app.refreshCache()
@@ -226,7 +231,6 @@ func main() {
 	// Set up Gin
 	router := gin.Default()
 	router.SetTrustedProxies(nil)
-	router.LoadHTMLGlob("templates/*")
 	app.setupRoutes(router)
 
 	// Start the server

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"html/template"
 	"log"
 	"os"
 	"testing"
@@ -18,7 +17,7 @@ func TestMain(m *testing.M) {
 	// Run the tests
 	os.Setenv("ALLOWED_LIBRARIES", "Movies,TV Shows")
 
-	app = NewApp(&template.Template{})
+	app = NewApp()
 	code := m.Run()
 	if code != 0 {
 		log.Fatal("Tests failed")
